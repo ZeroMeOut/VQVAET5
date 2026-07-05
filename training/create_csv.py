@@ -36,3 +36,6 @@ for i, j in zip(image_path_list, json_path_list):
 
 temp = pd.DataFrame(rows, columns=["image_path", "items", "tokenized_items"])
 temp.to_csv("../dataset/dataset.csv", index=False)
+
+smaller_temp = pd.DataFrame(rows, columns=["image_path", "items", "tokenized_items"]).sample(n=1000, random_state=42)
+smaller_temp.to_csv("../dataset/smaller_dataset.csv", index=False)
