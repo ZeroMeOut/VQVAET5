@@ -3,7 +3,8 @@ import torch
 import argparse
 from torch.optim import AdamW
 from utils import VQVAET5DATASET
-from torch.amp import GradScaler, autocast
+from torch.amp.grad_scaler import GradScaler
+from torch.amp.autocast_mode import autocast
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, random_split
 from vqvaeT5 import VQVAE_T5, load_models, get_device
