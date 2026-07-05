@@ -1,49 +1,43 @@
 import os
 import torch
-from torch.amp import GradScaler, autocast
+import argparse
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader, random_split
+from utils import VQVAET5DATASET
+from torch.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader, random_split
+from vqvaeT5 import VQVAE_T5, load_models, get_device
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # Reduces fragmentation on small GPUs — set before any CUDA allocations happen
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
-from vqvaeT5 import VQVAE_T5, load_models, get_device
-from utils import VQVAET5DATASET
 
 
-# ---------------------------------------------------------------------------
-# Config — edit these directly or wire up argparse if you prefer CLI flags
-# ---------------------------------------------------------------------------
-CONFIG = {
-    # Data
-    "csv_dir": "../dataset/smaller_dataset.csv",
-    "image_size": 256,
-    "val_split": 0.1,
-    "num_workers": 4,
-    # Training
-    "batch_size": 4,     
-    "num_epochs": 50,
-    "seed": 42,
-    # Loss — weight on the VQ-VAE commitment/embedding loss term
-    "embedding_loss_weight": 0.25,
-    # Optimiser — VQ-VAE gets a much lower LR since it's already pretrained
-    "lr_t5": 1e-4,
-    "lr_vqvae": 1e-5,
-    "weight_decay": 1e-2,
-    "grad_clip": 1.0,
-    # Memory
-    "mixed_precision": True,   # fp16 autocast — roughly halves activation memory on CUDA
-    # Checkpointing
-    "checkpoint_dir": "checkpoints",
-    "checkpoint_every": 5,   # save a periodic snapshot every N epochs
-    # TensorBoard
-    "log_dir": "runs",
-    # Optional callback fired after every checkpoint write (e.g. a Modal
-    # Volume.commit) — no-op by default, harmless to leave None locally.
-    "post_checkpoint_hook": None,
-}
+def parse_args():
+    p = argparse.ArgumentParser(description="Train the VQVAET5 model")
+
+    p.add_argument("--csv-dir", type=str, default="../dataset/smaller_dataset.csv")
+    p.add_argument("--image-size", type=int, default=256)
+    p.add_argument("--batch-size", type=int, default=4)
+    p.add_argument("--val-split", type=float, default=0.1)
+    p.add_argument("--num-workers", type=int, default=4)
+    p.add_argument("--epochs", dest="num_epochs", type=int, default=50)
+
+    p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--embedding-loss-weight", type=float, default=0.25)
+    p.add_argument("--lr-t5", type=float, default=1e-4)
+    p.add_argument("--lr-vqvae", type=float, default=1e-5)
+    p.add_argument("--weight-decay", type=float, default=1e-2)
+    p.add_argument("--grad-clip", type=float, default=1.0)
+
+    p.add_argument("--mixed-precision", action="store_true", help="Enable mixed precision training (fp16)")
+    p.add_argument("--checkpoint-dir", type=str, default="checkpoints")
+    p.add_argument("--checkpoint-every", type=int, default=5, help="Save a checkpoint every N epochs")
+
+    p.add_argument("--log-dir", type=str, default="runs")
+
+    return p.parse_args()
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +145,7 @@ def save_checkpoint(path: str, epoch: int, model, optimizer, scheduler, val_loss
 # Main
 # ---------------------------------------------------------------------------
 
-def train(cfg: dict = CONFIG):
+def train(cfg: dict):
     torch.manual_seed(cfg["seed"])
     device = get_device()
     print(f"Using device: {device}")
@@ -208,8 +202,6 @@ def train(cfg: dict = CONFIG):
                     epoch, model, optimizer, scheduler, best_val_loss,
                 )
                 print(f"  -> New best saved (val loss {best_val_loss:.4f})")
-                if cfg.get("post_checkpoint_hook"):
-                    cfg["post_checkpoint_hook"]()
 
             # Periodic snapshot
             if epoch % cfg["checkpoint_every"] == 0:
@@ -217,11 +209,10 @@ def train(cfg: dict = CONFIG):
                     os.path.join(cfg["checkpoint_dir"], f"epoch_{epoch:03d}.pt"),
                     epoch, model, optimizer, scheduler, val_metrics["loss"],
                 )
-                if cfg.get("post_checkpoint_hook"):
-                    cfg["post_checkpoint_hook"]()
     finally:
         writer.close()
 
 
 if __name__ == "__main__":
-    train()
+    args = parse_args()
+    train(vars(args))
