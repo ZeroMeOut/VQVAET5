@@ -11,6 +11,9 @@ from torchvision.utils import make_grid
 from utils import VQVAEDATASET
 from vqvae_model.vqvae import VQVAE
 
+torch.backends.cudnn.benchmark = True  
+torch.random.manual_seed(42)
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="Train the VQVAE receipt encoder")
