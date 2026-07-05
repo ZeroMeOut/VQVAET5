@@ -18,7 +18,7 @@ from utils import VQVAET5DATASET
 # ---------------------------------------------------------------------------
 CONFIG = {
     # Data
-    "csv_dir": "../dataset/dataset.csv",
+    "csv_dir": "../dataset/smaller_dataset.csv",
     "image_size": 256,
     "val_split": 0.1,
     "num_workers": 4,
