@@ -6,3 +6,4 @@ Still work in progress. The goal is to create a dount style model (see [here](ht
 - I am running out of memeory while trying to train
 - Fixed it :)
 - The training of the VQVAET5 is very slow for 5000 images per epoch and my ass doesn't want to rent a GPU, I may have reduce it.
+- The training is faster now, but I noticed the perplexity of the model isn't going up. Now there is a post I saw about perplexity not being that reliable and I am yet to read it. Also my model stops training for some reason when it hits around 8 epoch. I will be fixing that too.
