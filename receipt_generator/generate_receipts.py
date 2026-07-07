@@ -47,13 +47,14 @@ def generate_one(index, args, rng):
 
     stem = f"receipt_{index:05d}"
     images_dir = os.path.join(args.out, "images")
-    json_dir = os.path.join(args.out, "json")
     img_path = os.path.join(images_dir, f"{stem}.jpg")
-    json_path = os.path.join(json_dir, f"{stem}.json")
-
     final_img.save(img_path, format="JPEG", quality=90)
-    with open(json_path, "w") as f:
-        json.dump(strip_internal_fields(receipt), f, indent=2)
+
+    if args.generate_json:
+        json_dir = os.path.join(args.out, "json")
+        json_path = os.path.join(json_dir, f"{stem}.json")
+        with open(json_path, "w") as f:
+            json.dump(strip_internal_fields(receipt), f, indent=2)
 
     return img_path
 
@@ -68,6 +69,7 @@ def main():
                          help="clean = crisp digital look, photo = photographed look "
                               "(creases/lighting/blur/noise), random = mix of both (default: photo)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
+    parser.add_argument("--generate_json", type=bool, default=True, help="Whether to generate JSON files for the receipts (default: True)")
     args = parser.parse_args()
 
     if args.count < 1:
