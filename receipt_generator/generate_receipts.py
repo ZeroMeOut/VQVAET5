@@ -20,7 +20,7 @@ import random
 import sys
 import time
 
-from receipt_gen import build_receipt, render_receipt, make_photographed
+from .receipt_gen import build_receipt, render_receipt, make_photographed
 
 
 def strip_internal_fields(receipt):
