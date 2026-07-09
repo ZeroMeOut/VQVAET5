@@ -4,14 +4,14 @@ import torch
 import random
 import argparse
 from PIL import Image
-from torchvision import transforms
+from transformers import AutoTokenizer
 from training.utils import default_transform
 from receipt_generator.generate_receipts import generate_one
 from training.vqvaeT5 import VQVAE_T5, load_models, get_device
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate synthetic supermarket receipts (image + JSON).")
-    parser.add_argument("--count", type=int, default=20, help="Number of receipts to generate (default: 20)")
+    parser.add_argument("--count", type=int, default=1, help="Number of receipts to generate (default: 20)")
     parser.add_argument("--out", type=str, default="./main_image_dir", help="Output directory (default: ./main_image_dir)")
     parser.add_argument("--store", type=str, default="random", choices=["asda", "aldi", "random"],
                             help="Which store style to use (default: random mix)")
@@ -35,7 +35,8 @@ def load_model() -> "VQVAE_T5":
 
 def main():
     args = parse_args()
-    # model = load_model()
+    model = load_model()
+    tokenizer = AutoTokenizer.from_pretrained("t5-small")
     # print("Model loaded successfully.")
 
     if args.count < 1:
@@ -47,8 +48,17 @@ def main():
 
     for i in range(1, args.count + 1):
         path = generate_one(i, args, rng=random.Random(args.seed))
-        if args.count <= 50 or i % max(1, args.count // 20) == 0 or i == args.count:
-            print(f"[{i}/{args.count}] {path}")
+
+        image = Image.open(path).convert("RGB")
+        transform = default_transform(image_size=256)
+        image_tensor = transform(image).unsqueeze(0).to(get_device())
+
+        with torch.no_grad():
+            output = model.generate(image_tensor, max_length=512, num_beams=5, early_stopping=True)
+            print(tokenizer.decode(output[0], skip_special_tokens=True))
+
+        # if args.count <= 50 or i % max(1, args.count // 20) == 0 or i == args.count:
+        #     print(f"[{i}/{args.count}] {path}")
 
 
 if __name__ == "__main__":
