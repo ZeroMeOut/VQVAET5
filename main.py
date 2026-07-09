@@ -1,12 +1,18 @@
+import os
+import sys
 import torch
+import random
 import argparse
-from training.vqvaeT5 import VQVAE_T5, load_models, get_device
+from PIL import Image
+from torchvision import transforms
+from training.utils import default_transform
 from receipt_generator.generate_receipts import generate_one
+from training.vqvaeT5 import VQVAE_T5, load_models, get_device
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate synthetic supermarket receipts (image + JSON).")
-    parser.add_argument("--count", type=int, default=1, help="Number of receipts to generate (default: 20)")
-    parser.add_argument("--out", type=str, default="./dataset", help="Output directory (default: ./dataset)")
+    parser.add_argument("--count", type=int, default=20, help="Number of receipts to generate (default: 20)")
+    parser.add_argument("--out", type=str, default="./main_image_dir", help="Output directory (default: ./main_image_dir)")
     parser.add_argument("--store", type=str, default="random", choices=["asda", "aldi", "random"],
                             help="Which store style to use (default: random mix)")
     parser.add_argument("--style", type=str, default="photo", choices=["clean", "photo", "random"],
@@ -27,10 +33,22 @@ def load_model() -> "VQVAE_T5":
     return model
 
 
-
 def main():
-    model = load_model()
-    print("Model loaded successfully.")
+    args = parse_args()
+    # model = load_model()
+    # print("Model loaded successfully.")
+
+    if args.count < 1:
+        print("--count must be >= 1", file=sys.stderr)
+        sys.exit(1)
+
+    os.makedirs(args.out, exist_ok=True)
+    os.makedirs(os.path.join(args.out, "images"), exist_ok=True)
+
+    for i in range(1, args.count + 1):
+        path = generate_one(i, args, rng=random.Random(args.seed))
+        if args.count <= 50 or i % max(1, args.count // 20) == 0 or i == args.count:
+            print(f"[{i}/{args.count}] {path}")
 
 
 if __name__ == "__main__":
