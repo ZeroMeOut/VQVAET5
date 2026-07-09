@@ -112,3 +112,15 @@ class VQVAE_T5(nn.Module):
         t5_output = self.t5_model(encoder_outputs=encoder_outputs, labels=labels)
 
         return embedding_loss, perplexity, t5_output
+    
+    @torch.no_grad()
+    def generate(self, x: torch.Tensor, **generate_kwargs):
+        z_q, indices, embedding_loss, perplexity = self.vqvae_model.encode_to_tokens(x)
+        B, C, H, W = z_q.shape
+        z_q = z_q.permute(0, 2, 3, 1).reshape(B, H * W, C)
+        z_q = self.image_proj(z_q)
+        pe = create_2d_sinusoidal_embeddings(H, W, self.d_model).to(z_q.device)
+        z_q = z_q + pe.unsqueeze(0)
+
+        encoder_outputs = BaseModelOutput(last_hidden_state=z_q)
+        return self.t5_model.generate(encoder_outputs=encoder_outputs, **generate_kwargs)
