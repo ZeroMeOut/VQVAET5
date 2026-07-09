@@ -6,8 +6,11 @@ import argparse
 from PIL import Image
 from transformers import AutoTokenizer
 from training.utils import default_transform
+from training.vqvaeT5 import VQVAE_T5, get_device
+from transformers import T5ForConditionalGeneration
 from receipt_generator.generate_receipts import generate_one
-from training.vqvaeT5 import VQVAE_T5, load_models, get_device
+from training.encoder_pretraining.vqvae_model.vqvae import VQVAE
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate synthetic supermarket receipts (image + JSON).")
@@ -22,22 +25,43 @@ def parse_args():
     parser.add_argument("--generate_json", type=bool, default=False, help="Whether to generate JSON files for the receipts (default: False)")
     return parser.parse_args()
 
-
-def load_model() -> "VQVAE_T5":
-    ckpt_path = "training/checkpoints/best.pt"
+## A different version of the load_model function for inference. There is probably a better way to do this
+def load_models(
+    checkpoint_path: str = "training/checkpoints/best.pt",
+    vqvae_checkpoint_path: str = "training/encoder_pretraining/checkpoints/best.pt",
+    t5_name: str = "t5-small",
+    freeze_vqvae: bool = False,
+) -> "VQVAE_T5":
     device = get_device()
-    ckpt = torch.load(ckpt_path, map_location=device)
-    model = load_models(checkpoint_path='training/encoder_pretraining/checkpoints/best.pt').to(device)
+
+    vqvae_ckpt = torch.load(vqvae_checkpoint_path, map_location=device)
+    ckpt = torch.load(checkpoint_path, map_location=device)
+
+    vqvae_model = VQVAE(
+        h_dim=vqvae_ckpt["args"]["h_dim"],
+        res_h_dim=vqvae_ckpt["args"]["res_h_dim"],
+        n_res_layers=vqvae_ckpt["args"]["n_res_layers"],
+        n_embeddings=vqvae_ckpt["args"]["n_embeddings"],
+        embedding_dim=vqvae_ckpt["args"]["embedding_dim"],
+        beta=vqvae_ckpt["args"]["beta"],
+    ).to(device)
+
+    t5_model = T5ForConditionalGeneration.from_pretrained(t5_name)
+
+    model = VQVAE_T5(vqvae_model, t5_model).to(device)
     model.load_state_dict(ckpt["model_state_dict"])
-    model.eval()
+
+    if freeze_vqvae:
+        for param in model.vqvae_model.parameters():
+            param.requires_grad = False
+
     return model
 
 
 def main():
     args = parse_args()
-    model = load_model()
+    model = load_models()
     tokenizer = AutoTokenizer.from_pretrained("t5-small")
-    # print("Model loaded successfully.")
 
     if args.count < 1:
         print("--count must be >= 1", file=sys.stderr)
