@@ -3,13 +3,14 @@ Renders a structured receipt dict (see layout.build_receipt) into a clean,
 'fresh off the till' PIL image. The photographed look is applied afterwards
 by augment.py.
 """
-
+import os
 import random
 from PIL import Image, ImageDraw, ImageFont
 
-MONO_REGULAR = "fonts/dejavu-sans.condensed.ttf"
-MONO_BOLD = "fonts/dejavu-sans-mono.bold.ttf"
-SANS_BOLD = "fonts/dejavu-sans-mono.bold.ttf"
+_FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fonts")
+MONO_REGULAR = os.path.join(_FONT_DIR, "dejavu-sans.condensed.ttf")
+MONO_BOLD = os.path.join(_FONT_DIR, "dejavu-sans-mono.bold.ttf")
+SANS_BOLD = os.path.join(_FONT_DIR, "dejavu-sans-mono.bold.ttf")
 
 PAPER_WIDTH = 420
 MARGIN = 22
