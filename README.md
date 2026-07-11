@@ -11,3 +11,4 @@ Still work in progress. The goal is to create a dount style model (see [here](ht
 - The reason the model stiopped training is because my system goes into sleep mode
 - The generation of the model is not good. It prints out the results in order but the results does not reflect the actual things in the reciept. Maybe more data is needed idk.
 - I think it's my loss function
+- It's not the loss function. idk anymore
