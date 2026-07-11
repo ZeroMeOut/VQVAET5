@@ -10,3 +10,4 @@ Still work in progress. The goal is to create a dount style model (see [here](ht
 - My understanding of perplexity is all over the place now. Sometime high perplexity is good but sometmes it isn't? I will need someone to help me out (I have no one lol)
 - The reason the model stiopped training is because my system goes into sleep mode
 - The generation of the model is not good. It prints out the results in order but the results does not reflect the actual things in the reciept. Maybe more data is needed idk.
+- I think it's my loss function
