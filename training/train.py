@@ -90,7 +90,7 @@ def run_epoch(model, loader, device, cfg, optimizer=None, scaler=None):
 
             with autocast(device_type=device.type, dtype=torch.float16, enabled=use_amp):
                 embedding_loss, perplexity, t5_output = model(images, labels=tokenized_labels)
-                loss = t5_output.loss + cfg["embedding_loss_weight"] * embedding_loss
+                loss = t5_output.loss #+ cfg["embedding_loss_weight"] * embedding_loss
 
             if is_train:
                 optimizer.zero_grad()

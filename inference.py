@@ -27,7 +27,7 @@ def parse_args():
 
 ## A different version of the load_model function for inference. There is probably a better way to do this
 def load_models(
-    checkpoint_path: str = "training/checkpoints/best.pt",
+    checkpoint_path: str = "training/checkpoints/epoch_005.pt",
     vqvae_checkpoint_path: str = "training/encoder_pretraining/checkpoints/best.pt",
     t5_name: str = "t5-small",
     freeze_vqvae: bool = False,

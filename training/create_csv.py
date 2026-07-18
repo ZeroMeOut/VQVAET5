@@ -22,11 +22,13 @@ for i, j in zip(image_path_list, json_path_list):
 
     items = ",".join(k["name"] for k in json_data["items"]) + "."
 
-    tokenized_items = (
-        tokenizer(items, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-        ["input_ids"][0]
-        .tolist()
-    )
+    tokenized_items = tokenizer(
+        items, padding="max_length", truncation=True, max_length=128, return_tensors="pt"
+    )["input_ids"][0]
+
+    tokenized_items = tokenized_items.masked_fill(
+        tokenized_items == tokenizer.pad_token_id, -100
+        ).tolist()
 
     rows.append({
         "image_path": os.path.join(image_path, i),
@@ -37,5 +39,5 @@ for i, j in zip(image_path_list, json_path_list):
 temp = pd.DataFrame(rows, columns=["image_path", "items", "tokenized_items"])
 temp.to_csv("../dataset/dataset.csv", index=False)
 
-smaller_temp = pd.DataFrame(rows, columns=["image_path", "items", "tokenized_items"]).sample(n=1000, random_state=42)
+smaller_temp = pd.DataFrame(rows, columns=["image_path", "items", "tokenized_items"]).sample(n=2000, random_state=42)
 smaller_temp.to_csv("../dataset/smaller_dataset.csv", index=False)
