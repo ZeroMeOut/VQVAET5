@@ -18,7 +18,7 @@ class Discriminator(nn.Module):
             layers += [
                 nn.Conv2d(num_filters_last * num_filters_mult_last, num_filters_last * num_filters_mult, 4,
                           2 if i < n_layers else 1, 1, bias=False),
-                nn.BatchNorm2d(num_filters_last * num_filters_mult),
+                nn.InstanceNorm2d(num_filters_last * num_filters_mult, affine=True),
                 nn.LeakyReLU(0.2, True)
             ]
 

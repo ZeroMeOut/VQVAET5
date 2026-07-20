@@ -120,7 +120,7 @@ def evaluate(model, lpips, loader, device):
 
         if i == 0:
             original_and_recon_images.append(x)
-            original_and_recon_images.append(x_hat.clamp(0, 1))
+            original_and_recon_images.append(x_hat.clamp(-1, 1))
 
     model.train()
     return (
