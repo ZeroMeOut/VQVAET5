@@ -8,6 +8,7 @@ dependencies = [
     "numpy>=2.5.0",
     "pandas>=3.0.3",
     "pillow>=12.2.0",
+    "requests>=2.34.2",
     "scikit-image>=0.26.0",
     "tensorboard>=2.20.0",
     "torch==2.11.0",
