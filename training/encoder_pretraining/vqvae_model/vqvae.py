@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from .encoder import Encoder
 from .quantizer import VectorQuantizer
@@ -40,6 +41,18 @@ class VQVAE(nn.Module):
 
         return embedding_loss, x_hat, perplexity
     
+    def calculate_lambda(self, perceptual_loss, gan_loss):
+        last_layer = self.decoder.inverse_conv_stack[-1]
+        assert isinstance(last_layer, nn.ConvTranspose2d)
+        last_layer_weight = last_layer.weight
+        perceptual_loss_grads = torch.autograd.grad(perceptual_loss, last_layer_weight, retain_graph=True)[0]
+        gan_loss_grads = torch.autograd.grad(gan_loss, last_layer_weight, retain_graph=True)[0]
+
+        λ = torch.norm(perceptual_loss_grads) / (torch.norm(gan_loss_grads) + 1e-4)
+        λ = torch.clamp(λ, 0, 1e4).detach()
+        return 0.8 * λ
+    
+    @torch.no_grad()
     def encode_to_tokens(self, x):
         z_e = self.encoder(x)
         z_e = self.pre_quantization_conv(z_e)

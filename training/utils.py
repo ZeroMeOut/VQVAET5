@@ -1,6 +1,7 @@
 import ast
 import torch
 import pandas as pd
+from torch import nn
 from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset
@@ -35,6 +36,21 @@ class VQVAET5DATASET(Dataset):
         return image, labels, tokenized_labels
 
 
-if __name__ == "__main__":
-    dataset = VQVAET5DATASET()
-    print(f"Dataset length: {len(dataset)}")
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.constant_(m.bias.data, 0)
+
+
+def adopt_weight(disc_factor, i, threshold, value=0.):
+    if i < threshold:
+        disc_factor = value
+    return disc_factor
+
+
+# if __name__ == "__main__":
+#     dataset = VQVAET5DATASET()
+#     print(f"Dataset length: {len(dataset)}")
