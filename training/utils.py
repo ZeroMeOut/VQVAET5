@@ -24,7 +24,7 @@ class VQVAET5DATASET(Dataset):
         return len(self.csv)
 
     def __getitem__(self, idx):
-        img_name = "../" + str(self.csv.iloc[idx, 0])
+        img_name = "../" + str(self.csv.iloc[idx, 0]) ## I will fix this later
         image = Image.open(img_name).convert("RGB")
         image = self.transform(image)
 
