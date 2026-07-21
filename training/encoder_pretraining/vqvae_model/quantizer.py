@@ -2,9 +2,6 @@ import torch
 import torch.nn as nn
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 class VectorQuantizer(nn.Module):
     """
     Discretization bottleneck part of the VQ-VAE.
@@ -51,7 +48,7 @@ class VectorQuantizer(nn.Module):
         # find closest encodings
         min_encoding_indices = torch.argmin(d, dim=1).unsqueeze(1)
         min_encodings = torch.zeros(
-            min_encoding_indices.shape[0], self.n_e).to(device)
+            min_encoding_indices.shape[0], self.n_e, device=z.device)
         min_encodings.scatter_(1, min_encoding_indices, 1)
 
         # get quantized latent vectors
