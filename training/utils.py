@@ -15,7 +15,7 @@ def default_transform(image_size: int = 256):
 
 
 class VQVAET5DATASET(Dataset):
-    def __init__(self, csv_dir="../dataset/dataset.csv", image_size=256, transform=None):
+    def __init__(self, csv_dir="../dataset/dataset_tokenized.csv", image_size=256, transform=None):
         self.csv_dir = csv_dir
         self.csv = pd.read_csv(self.csv_dir)
         self.transform = transform or default_transform(image_size)
@@ -24,7 +24,7 @@ class VQVAET5DATASET(Dataset):
         return len(self.csv)
 
     def __getitem__(self, idx):
-        img_name = str(self.csv.iloc[idx, 0])
+        img_name = "../" + str(self.csv.iloc[idx, 0])
         image = Image.open(img_name).convert("RGB")
         image = self.transform(image)
 

@@ -18,12 +18,12 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 def parse_args():
     p = argparse.ArgumentParser(description="Train the VQVAET5 model")
 
-    p.add_argument("--csv-dir", type=str, default="../dataset/smaller_dataset.csv")
+    p.add_argument("--csv-dir", type=str, default="../dataset/dataset_tokenized.csv")
     p.add_argument("--image-size", type=int, default=256)
-    p.add_argument("--batch-size", type=int, default=4) ## Anything igher than 4 here is too much for my laptop
+    p.add_argument("--batch-size", type=int, default=8) ## Anything higher than 4 here is too much for my laptop
     p.add_argument("--val-split", type=float, default=0.1)
     p.add_argument("--num-workers", type=int, default=4)
-    p.add_argument("--epochs", dest="num_epochs", type=int, default=50)
+    p.add_argument("--epochs", dest="num_epochs", type=int, default=100)
 
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--embedding-loss-weight", type=float, default=0.25)
@@ -80,7 +80,7 @@ def run_epoch(model, loader, device, cfg, optimizer=None, scaler=None):
     use_amp  = cfg["mixed_precision"] and device.type == "cuda"
     model.train() if is_train else model.eval()
 
-    total_loss = total_t5 = total_emb = total_perp = 0.0
+    total_loss = 0.0
 
     ctx = torch.enable_grad() if is_train else torch.no_grad()
     with ctx:
@@ -89,8 +89,8 @@ def run_epoch(model, loader, device, cfg, optimizer=None, scaler=None):
             tokenized_labels = tokenized_labels.to(device)
 
             with autocast(device_type=device.type, dtype=torch.float16, enabled=use_amp):
-                embedding_loss, perplexity, t5_output = model(images, labels=tokenized_labels)
-                loss = t5_output.loss #+ cfg["embedding_loss_weight"] * embedding_loss
+                _, _, t5_output = model(images, labels=tokenized_labels)
+                loss = t5_output.loss
 
             if is_train:
                 optimizer.zero_grad()
@@ -106,26 +106,17 @@ def run_epoch(model, loader, device, cfg, optimizer=None, scaler=None):
                     optimizer.step()
 
             total_loss += loss.item()
-            total_t5   += t5_output.loss.item()
-            total_emb  += embedding_loss.item()
-            total_perp += perplexity.item()
 
     n = len(loader)
     return {
-        "loss":       total_loss / n,
-        "t5_loss":    total_t5   / n,
-        "emb_loss":   total_emb  / n,
-        "perplexity": total_perp / n,
+        "loss": total_loss / n,
     }
 
 
 def log(prefix: str, metrics: dict, epoch: int, num_epochs: int):
     print(
         f"Epoch {epoch:>3}/{num_epochs} | {prefix} | "
-        f"loss {metrics['loss']:.4f} | "
-        f"t5 {metrics['t5_loss']:.4f} | "
-        f"emb {metrics['emb_loss']:.4f} | "
-        f"perplexity {metrics['perplexity']:.2f}"
+        f"loss {metrics['loss']:.4f}"
     )
 
 
@@ -154,7 +145,7 @@ def train(cfg: dict):
     train_loader, val_loader = make_loaders(cfg, device)
     print(f"Train batches: {len(train_loader)} | Val batches: {len(val_loader)}")
 
-    model     = load_models(freeze_vqvae=False).to(device)
+    model = load_models().to(device)
 
     # Gradient checkpointing trades compute for memory — recomputes activations
     # on the backward pass instead of storing them. Worthwhile on a small GPU.
@@ -182,15 +173,14 @@ def train(cfg: dict):
 
             # -- TensorBoard --
             # Group train/val on the same chart by sharing the parent tag
-            for metric in ("loss", "t5_loss", "emb_loss", "perplexity"):
-                tag = metric.replace("_", " ").title().replace(" ", "_")
-                writer.add_scalars(tag, {
-                    "train": train_metrics[metric],
-                    "val":   val_metrics[metric],
-                }, epoch)
+
+            writer.add_scalars("vqvaet5", {
+                "train": train_metrics["loss"],
+                "val":   val_metrics["loss"],
+            }, epoch)
 
             # Log the current LR for each param group
-            writer.add_scalar("LR/vqvae", optimizer.param_groups[0]["lr"], epoch)
+            ## writer.add_scalar("LR/vqvae", optimizer.param_groups[0]["lr"], epoch)
             writer.add_scalar("LR/t5",    optimizer.param_groups[1]["lr"], epoch)
 
             scheduler.step()

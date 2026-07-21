@@ -2,7 +2,7 @@ import math
 import torch
 from torch import nn
 from transformers import T5ForConditionalGeneration
-from .encoder_pretraining.vqvae_model.vqvae import VQVAE ## Imports in python are so weird man
+from encoder_pretraining.vqvae_model.vqvae import VQVAE ## Imports in python are so weird man
 from transformers.modeling_outputs import BaseModelOutput
 
 
@@ -17,7 +17,7 @@ def get_device() -> torch.device:
 def load_models(
     checkpoint_path: str = "encoder_pretraining/checkpoints/best.pt",
     t5_name: str = "t5-small",
-    freeze_vqvae: bool = False,
+    freeze_vqvae: bool = True,
 ) -> "VQVAE_T5":
     """
     Load and return a VQVAE_T5 model.
