@@ -96,6 +96,15 @@ class VQVAE_T5(nn.Module):
         self.t5_model = t5_model
         self.d_model = t5_model.config.d_model
         self.image_proj = nn.Linear(vqvae_model.vector_quantization.e_dim, self.d_model)
+        self.image_norm = nn.LayerNorm(self.d_model)
+        self._pe_cache = {}
+
+    def _get_pe(self, H, W, device):
+        pe = self._pe_cache.get((H, W))
+        if pe is None or pe.device != device:
+            pe = create_2d_sinusoidal_embeddings(H, W, self.d_model).to(device).unsqueeze(0)
+            self._pe_cache[(H, W)] = pe
+        return pe
 
     def forward(self, x: torch.Tensor, labels: torch.Tensor | None = None):
         z_q, indices, embedding_loss, perplexity = self.vqvae_model.encode_to_tokens(x)
@@ -104,9 +113,8 @@ class VQVAE_T5(nn.Module):
         # Reshape to (B, H*W, C): T5 expects (batch, seq_len, embed_dim)
         z_q = z_q.permute(0, 2, 3, 1).reshape(B, H * W, C)
         z_q = self.image_proj(z_q)
-
-        pe = create_2d_sinusoidal_embeddings(H, W, self.d_model).to(z_q.device)
-        z_q = z_q + pe.unsqueeze(0)
+        z_q = self.image_norm(z_q)
+        z_q = z_q + self._get_pe(H, W, z_q.device)
 
         encoder_outputs = BaseModelOutput(last_hidden_state=z_q)
         t5_output = self.t5_model(encoder_outputs=encoder_outputs, labels=labels)
@@ -119,8 +127,8 @@ class VQVAE_T5(nn.Module):
         B, C, H, W = z_q.shape
         z_q = z_q.permute(0, 2, 3, 1).reshape(B, H * W, C)
         z_q = self.image_proj(z_q)
-        pe = create_2d_sinusoidal_embeddings(H, W, self.d_model).to(z_q.device)
-        z_q = z_q + pe.unsqueeze(0)
+        z_q = self.image_norm(z_q)
+        z_q = z_q + self._get_pe(H, W, z_q.device)
 
         encoder_outputs = BaseModelOutput(last_hidden_state=z_q)
         return self.t5_model.generate(encoder_outputs=encoder_outputs, **generate_kwargs)
