@@ -26,7 +26,6 @@ def parse_args():
     p.add_argument("--epochs", dest="num_epochs", type=int, default=100)
 
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--embedding-loss-weight", type=float, default=0.25)
     p.add_argument("--lr-t5", type=float, default=1e-4)
     p.add_argument("--lr-vqvae", type=float, default=1e-5)
     p.add_argument("--weight-decay", type=float, default=1e-2)
@@ -66,7 +65,6 @@ def make_loaders(cfg: dict, device: torch.device):
 def make_optimizer(model: VQVAE_T5, cfg: dict) -> AdamW:
     return AdamW(
         [
-            {"params": model.vqvae_model.parameters(), "lr": cfg["lr_vqvae"]},
             {"params": model.t5_model.parameters(),    "lr": cfg["lr_t5"]},
             {"params": model.image_proj.parameters(),  "lr": cfg["lr_t5"]},
         ],
