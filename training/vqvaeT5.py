@@ -95,8 +95,7 @@ class VQVAE_T5(nn.Module):
         self.vqvae_model = vqvae_model
         self.t5_model = t5_model
         self.d_model = t5_model.config.d_model
-        self.image_proj = nn.Linear(vqvae_model.vector_quantization.e_dim, self.d_model)
-        self.image_norm = nn.LayerNorm(self.d_model)
+        self.image_proj = nn.Embedding(vqvae_model.vector_quantization.n_e, self.d_model)
         self._pe_cache = {}
 
     def _get_pe(self, H, W, device):
@@ -110,25 +109,23 @@ class VQVAE_T5(nn.Module):
         z_q, indices, embedding_loss, perplexity = self.vqvae_model.encode_to_tokens(x)
         B, C, H, W = z_q.shape
 
-        # Reshape to (B, H*W, C): T5 expects (batch, seq_len, embed_dim)
-        z_q = z_q.permute(0, 2, 3, 1).reshape(B, H * W, C)
-        z_q = self.image_proj(z_q)
-        z_q = self.image_norm(z_q)
-        z_q = z_q + self._get_pe(H, W, z_q.device)
+        indices = indices.view(B, H * W)
+        indices = self.image_proj(indices)
+        indices = indices + self._get_pe(H, W, indices.device)
 
-        encoder_outputs = BaseModelOutput(last_hidden_state=z_q)
+        encoder_outputs = BaseModelOutput(last_hidden_state=indices)
         t5_output = self.t5_model(encoder_outputs=encoder_outputs, labels=labels)
 
         return embedding_loss, perplexity, t5_output
-    
+
     @torch.no_grad()
     def generate(self, x: torch.Tensor, **generate_kwargs):
         z_q, indices, embedding_loss, perplexity = self.vqvae_model.encode_to_tokens(x)
         B, C, H, W = z_q.shape
-        z_q = z_q.permute(0, 2, 3, 1).reshape(B, H * W, C)
-        z_q = self.image_proj(z_q)
-        z_q = self.image_norm(z_q)
-        z_q = z_q + self._get_pe(H, W, z_q.device)
 
-        encoder_outputs = BaseModelOutput(last_hidden_state=z_q)
+        indices = indices.view(B, H * W)
+        indices = self.image_proj(indices)
+        indices = indices + self._get_pe(H, W, indices.device)
+
+        encoder_outputs = BaseModelOutput(last_hidden_state=indices)
         return self.t5_model.generate(encoder_outputs=encoder_outputs, **generate_kwargs)
