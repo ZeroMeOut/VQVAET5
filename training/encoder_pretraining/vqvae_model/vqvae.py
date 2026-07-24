@@ -52,7 +52,6 @@ class VQVAE(nn.Module):
         λ = torch.clamp(λ, 0, 1e4).detach()
         return 0.8 * λ
     
-    @torch.no_grad()
     def encode_to_tokens(self, x):
         z_e = self.encoder(x)
         z_e = self.pre_quantization_conv(z_e)
