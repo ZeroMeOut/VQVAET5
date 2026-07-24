@@ -27,8 +27,14 @@ def parse_args():
 
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--lr-t5", type=float, default=1e-4)
+    p.add_argument("--lr-vqvae", type=float, default=1e-5)
     p.add_argument("--weight-decay", type=float, default=1e-2)
     p.add_argument("--grad-clip", type=float, default=1.0)
+
+    p.add_argument("--unfreeze-vqvae", action="store_true",
+                    help="Fine-tune the VQ-VAE end-to-end instead of keeping it frozen")
+    p.add_argument("--embedding-loss-weight", type=float, default=0.25,
+                help="Weight for the VQ-VAE embedding/commitment loss (only applied when --unfreeze-vqvae is set)")
 
     p.add_argument("--mixed-precision", action="store_true", help="Enable mixed precision training (fp16)")
     p.add_argument("--checkpoint-dir", type=str, default="checkpoints")
@@ -62,12 +68,15 @@ def make_loaders(cfg: dict, device: torch.device):
 
 
 def make_optimizer(model: VQVAE_T5, cfg: dict) -> AdamW:
-    return AdamW(
-        [
-            {"params": [p for p in model.parameters() if p.requires_grad], "lr": cfg["lr_t5"]},
-        ],
-        weight_decay=cfg["weight_decay"],
-    )
+    vqvae_params = [p for p in model.vqvae_model.parameters() if p.requires_grad]
+    other_params = [p for n, p in model.named_parameters()
+                     if p.requires_grad and not n.startswith("vqvae_model.")]
+
+    param_groups = [{"params": other_params, "lr": cfg["lr_t5"]}]
+    if vqvae_params:
+        param_groups.append({"params": vqvae_params, "lr": cfg["lr_vqvae"]})
+
+    return AdamW(param_groups, weight_decay=cfg["weight_decay"])
 
 
 def run_epoch(model, loader, device, cfg, optimizer=None, scaler=None):
@@ -85,8 +94,10 @@ def run_epoch(model, loader, device, cfg, optimizer=None, scaler=None):
             tokenized_labels = tokenized_labels.to(device)
 
             with autocast(device_type=device.type, dtype=torch.float16, enabled=use_amp):
-                _, _, t5_output = model(images, labels=tokenized_labels)
+                embedding_loss, _, t5_output = model(images, labels=tokenized_labels)
                 loss = t5_output.loss
+                if cfg["unfreeze_vqvae"]:
+                    loss = loss + cfg["embedding_loss_weight"] * embedding_loss
 
             if is_train:
                 optimizer.zero_grad()
@@ -141,7 +152,7 @@ def train(cfg: dict):
     train_loader, val_loader = make_loaders(cfg, device)
     print(f"Train batches: {len(train_loader)} | Val batches: {len(val_loader)}")
 
-    model = load_models().to(device)
+    model = load_models(freeze_vqvae=cfg["unfreeze_vqvae"]).to(device)
 
     # Gradient checkpointing trades compute for memory — recomputes activations
     # on the backward pass instead of storing them. Worthwhile on a small GPU.
@@ -176,8 +187,8 @@ def train(cfg: dict):
             }, epoch)
 
             # Log the current LR for each param group
-            ## writer.add_scalar("LR/vqvae", optimizer.param_groups[0]["lr"], epoch)
-            ## writer.add_scalar("LR/t5",    optimizer.param_groups[1]["lr"], epoch)
+            for i, group in enumerate(optimizer.param_groups):
+                writer.add_scalar(f"LR/group_{i}", group["lr"], epoch)
 
             scheduler.step()
 
