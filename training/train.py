@@ -23,11 +23,10 @@ def parse_args():
     p.add_argument("--batch-size", type=int, default=8) ## Anything higher than 4 here is too much for my laptop
     p.add_argument("--val-split", type=float, default=0.1)
     p.add_argument("--num-workers", type=int, default=4)
-    p.add_argument("--epochs", dest="num_epochs", type=int, default=100)
+    p.add_argument("--epochs", dest="num_epochs", type=int, default=20)
 
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--lr-t5", type=float, default=1e-4)
-    p.add_argument("--lr-vqvae", type=float, default=1e-5)
     p.add_argument("--weight-decay", type=float, default=1e-2)
     p.add_argument("--grad-clip", type=float, default=1.0)
 
@@ -65,8 +64,7 @@ def make_loaders(cfg: dict, device: torch.device):
 def make_optimizer(model: VQVAE_T5, cfg: dict) -> AdamW:
     return AdamW(
         [
-            {"params": model.t5_model.parameters(),    "lr": cfg["lr_t5"]},
-            {"params": model.image_proj.parameters(),  "lr": cfg["lr_t5"]},
+            {"params": [p for p in model.parameters() if p.requires_grad], "lr": cfg["lr_t5"]},
         ],
         weight_decay=cfg["weight_decay"],
     )
@@ -179,7 +177,7 @@ def train(cfg: dict):
 
             # Log the current LR for each param group
             ## writer.add_scalar("LR/vqvae", optimizer.param_groups[0]["lr"], epoch)
-            writer.add_scalar("LR/t5",    optimizer.param_groups[1]["lr"], epoch)
+            ## writer.add_scalar("LR/t5",    optimizer.param_groups[1]["lr"], epoch)
 
             scheduler.step()
 
