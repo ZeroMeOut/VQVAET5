@@ -14,3 +14,4 @@ Still work in progress. The goal is to create a dount style model (see [here](ht
 - It's not the loss function. idk anymore
 - Reminder to fix this error "from .encoder_pretraining.vqvae_model.vqvae import VQVAE ## Imports in python are so weird man"
 - I switched the impage projecttion from linear to nn.embedding and I am getting better val and training losses with 20 epochs, which is a good sign.
+- It still sucks, sigh. I think vqvae isn't just just good for the encoder but I don't have a way to be sure I am really correct without someone else taking a look.
