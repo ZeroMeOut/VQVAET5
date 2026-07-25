@@ -13,8 +13,6 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 # Reduces fragmentation on small GPUs — set before any CUDA allocations happen
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
-
-
 def parse_args():
     p = argparse.ArgumentParser(description="Train the VQVAET5 model")
 
@@ -23,7 +21,7 @@ def parse_args():
     p.add_argument("--batch-size", type=int, default=8) ## Anything higher than 4 here is too much for my laptop
     p.add_argument("--val-split", type=float, default=0.1)
     p.add_argument("--num-workers", type=int, default=4)
-    p.add_argument("--epochs", dest="num_epochs", type=int, default=20)
+    p.add_argument("--epochs", dest="num_epochs", type=int, default=50)
 
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--lr-t5", type=float, default=1e-4)
