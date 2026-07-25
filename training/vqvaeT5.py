@@ -103,6 +103,17 @@ class VQVAE_T5(nn.Module):
         self.image_proj = nn.Embedding(vqvae_model.vector_quantization.n_e, self.d_model)
         self._pe_cache = {}
 
+        visual_encoder_layer = nn.TransformerEncoderLayer(
+            d_model=self.d_model,
+            nhead=8,
+            dim_feedforward=self.d_model * 4,
+            dropout=0.1,
+            batch_first=True,
+        )
+        self.visual_encoder = nn.TransformerEncoder(
+            visual_encoder_layer, num_layers=2, norm=nn.LayerNorm(self.d_model)
+        )
+
     def _get_pe(self, H, W, device):
         pe = self._pe_cache.get((H, W))
         if pe is None or pe.device != device:
@@ -117,6 +128,7 @@ class VQVAE_T5(nn.Module):
         indices = indices.view(B, H * W)
         indices = self.image_proj(indices)
         indices = indices + self._get_pe(H, W, indices.device)
+        indices = self.visual_encoder(indices)
 
         encoder_outputs = BaseModelOutput(last_hidden_state=indices)
         t5_output = self.t5_model(encoder_outputs=encoder_outputs, labels=labels)
@@ -131,6 +143,7 @@ class VQVAE_T5(nn.Module):
         indices = indices.view(B, H * W)
         indices = self.image_proj(indices)
         indices = indices + self._get_pe(H, W, indices.device)
+        indices = self.visual_encoder(indices)
 
         encoder_outputs = BaseModelOutput(last_hidden_state=indices)
         return self.t5_model.generate(encoder_outputs=encoder_outputs, **generate_kwargs)
