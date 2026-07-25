@@ -18,7 +18,7 @@ def parse_args():
 
     p.add_argument("--csv-dir", type=str, default="../dataset/dataset_tokenized.csv")
     p.add_argument("--image-size", type=int, default=256)
-    p.add_argument("--batch-size", type=int, default=8) ## Anything higher than 4 here is too much for my laptop
+    p.add_argument("--batch-size", type=int, default=4) ## Anything higher than 4 here is too much for my laptop
     p.add_argument("--val-split", type=float, default=0.1)
     p.add_argument("--num-workers", type=int, default=4)
     p.add_argument("--epochs", dest="num_epochs", type=int, default=50)
