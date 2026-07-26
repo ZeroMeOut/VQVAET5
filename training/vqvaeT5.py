@@ -4,9 +4,9 @@ from torch import nn
 from transformers import T5ForConditionalGeneration
 
 try:
-    from .encoder_pretraining.vqvae_model.vqvae import VQVAE ## Imports in python are so weird man
+    from .pretraining.vqvae_model.vqvae import VQVAE ## Imports in python are so weird man
 except ImportError:
-    from encoder_pretraining.vqvae_model.vqvae import VQVAE
+    from pretraining.vqvae_model.vqvae import VQVAE
 
 from transformers.modeling_outputs import BaseModelOutput
 
