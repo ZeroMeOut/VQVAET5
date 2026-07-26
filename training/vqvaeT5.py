@@ -20,7 +20,7 @@ def get_device() -> torch.device:
 
 ## Claude suggested this function to avoid crashes, which is honestly a good idea
 def load_models(
-    checkpoint_path: str = "encoder_pretraining/checkpoints/best.pt",
+    checkpoint_path: str = "pretraining/checkpoints/best.pt",
     t5_name: str = "t5-small",
     freeze_vqvae: bool = True,
 ) -> "VQVAE_T5":
