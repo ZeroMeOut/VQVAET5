@@ -25,7 +25,8 @@ def parse_args():
     parser.add_argument("--height", type=int, default=512, help="Height of the generated image")
     parser.add_argument("--background-color", type=str, default="white", help="Background color of the image")
     parser.add_argument("--text-color", type=str, default="0,0,0", help="Text color in RGB format (e.g. '0,0,0' for black)")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed for picking holdout words (default: different words each run)")
+    parser.add_argument("--train-seed", type=int, default=42, help="Seed the training set was generated with; must match SEED in train_modal.py")
     parser.add_argument("--train-data-amount", type=int, default=15000, help="Amount of training data to generate (default: 15000)")
     return parser.parse_args()
 
@@ -92,10 +93,10 @@ def main():
     with open(args.txt_file) as f:
         lines = f.readlines()
 
-    rng = random.Random(args.seed)
-    train_words = set(w.strip() for w in rng.sample(lines, args.train_data_amount))
+    train_rng = random.Random(args.train_seed)
+    train_words = set(w.strip() for w in train_rng.sample(lines, args.train_data_amount))
     holdout = [w for w in lines if w.strip() not in train_words]
-    words = [w.strip() for w in rng.sample(holdout, args.count)]
+    words = [w.strip() for w in random.Random(args.seed).sample(holdout, args.count)]
 
     for i, word in enumerate(words, start=1):
         path = generate_one(i, args, word)
