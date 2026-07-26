@@ -20,7 +20,7 @@ def parse_args():
                          help="Text file to sample words from")
     parser.add_argument("--font-path", type=str, default="word_on_background/fonts/dejavu-sans-mono.bold.ttf",
                          help="Path to the font file")
-    parser.add_argument("--font-size", type=int, default=20, help="Font size for the text")
+    parser.add_argument("--font-size", type=int, default=40, help="Font size for the text")
     parser.add_argument("--width", type=int, default=512, help="Width of the generated image")
     parser.add_argument("--height", type=int, default=512, help="Height of the generated image")
     parser.add_argument("--background-color", type=str, default="white", help="Background color of the image")
@@ -31,7 +31,7 @@ def parse_args():
 ## A different version of the load_model function for inference. There is probably a better way to do this
 def load_models(
     checkpoint_path: str = "training/checkpoints/best.pt",
-    vqvae_checkpoint_path: str = "training/encoder_pretraining/checkpoints/best.pt",
+    vqvae_checkpoint_path: str = "training/pretraining/checkpoints/best.pt",
     t5_name: str = "t5-small",
 ) -> "VQVAE_T5":
     device = get_device()
