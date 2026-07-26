@@ -9,7 +9,7 @@ from training.utils import default_transform
 from training.vqvaeT5 import VQVAE_T5, get_device
 from transformers import T5ForConditionalGeneration
 from word_on_background.generator import generate_image_with_text
-from training.encoder_pretraining.vqvae_model.vqvae import VQVAE
+from training.pretraining.vqvae_model.vqvae import VQVAE
 
 
 def parse_args():
