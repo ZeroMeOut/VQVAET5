@@ -13,9 +13,19 @@ image = (
 
 vol = modal.Volume.from_name("vqvaet5-data", create_if_missing=True)
 
-
 FONT_SIZE = 100
 AMOUNT = 15000
+
+REPO_URL = "https://github.com/ZeroMeOut/VQVAET5.git"
+REPO = "/root/VQVAET5"
+
+def _clone():
+    import os, shutil, subprocess
+
+    if os.path.exists(REPO):
+        shutil.rmtree(REPO)
+    subprocess.run(["git", "clone", "--depth", "1", REPO_URL, REPO], check=True)
+    return REPO
 
 def _make_dataset(repo, amount, font_size):
     import subprocess
@@ -30,10 +40,10 @@ def _make_dataset(repo, amount, font_size):
 
 
 @app.function(image=image, gpu="A10G", timeout=60 * 60 * 4, volumes={"/data": vol})
-def pretrain_vqvae(amount: int = AMOUNT, epochs: int = 200, batch_size: int = 32):
+def pretrain_vqvae(amount: int = AMOUNT, epochs: int = 200, batch_size: int = 32, font_size: int = FONT_SIZE):
     import subprocess
     repo = _clone()
-    _make_dataset(repo, amount, FONT_SIZE)
+    _make_dataset(repo, amount, font_size)
 
     subprocess.run([
         "python", "pretrain.py",
@@ -47,10 +57,10 @@ def pretrain_vqvae(amount: int = AMOUNT, epochs: int = 200, batch_size: int = 32
 
 
 @app.function(image=image, gpu="A10G", timeout=60 * 60 * 4, volumes={"/data": vol})
-def train_t5(amount: int = AMOUNT, epochs: int = 100, batch_size: int = 8):
+def train_t5(amount: int = AMOUNT, epochs: int = 100, batch_size: int = 8, font_size: int = FONT_SIZE):
     import os, shutil, subprocess
     repo = _clone()
-    _make_dataset(repo, amount, FONT_SIZE)
+    _make_dataset(repo, amount, font_size)
 
     # put the pretrained VQVAE where load_models() actually looks for it
     ckpt_dir = f"{repo}/training/pretraining/checkpoints"
