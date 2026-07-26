@@ -18,3 +18,4 @@ Still work in progress. The goal is to create a dount style model (see [here](ht
 - Adding the Transformer encoder layer really really helps, like a lot. I am getting very promising results
 - The val loss usually stops really improvine around 20 epochs, I will try figuring out why
 - It finally gives good results LFGGGGGGGG
+- It is possible that the inference.py may sample from a word that it has been trained on but honestly, idrc atm. I can change it so that it don't happen later on.
