@@ -16,3 +16,4 @@ Still work in progress. The goal is to create a dount style model (see [here](ht
 - I switched the impage projecttion from linear to nn.embedding and I am getting better val and training losses with 20 epochs, which is a good sign.
 - It still sucks, sigh. I think vqvae isn't just just good for the encoder but I don't have a way to be sure I am really correct without someone else taking a look.
 - Adding the Transformer encoder layer really really helps, like a lot. I am getting very promising results
+- The val loss usually stops really improvine around 20 epochs, I will try figuring out why
