@@ -25,7 +25,8 @@ def parse_args():
     parser.add_argument("--height", type=int, default=512, help="Height of the generated image")
     parser.add_argument("--background-color", type=str, default="white", help="Background color of the image")
     parser.add_argument("--text-color", type=str, default="0,0,0", help="Text color in RGB format (e.g. '0,0,0' for black)")
-    parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+    parser.add_argument("--train-data-amount", type=int, default=15000, help="Amount of training data to generate (default: 15000)")
     return parser.parse_args()
 
 ## A different version of the load_model function for inference. There is probably a better way to do this
@@ -88,10 +89,13 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     os.makedirs(os.path.join(args.out, "images"), exist_ok=True)
 
-    rng = random.Random(args.seed)
-    with open(args.txt_file, "r") as f:
+    with open(args.txt_file) as f:
         lines = f.readlines()
-    words = [w.strip() for w in rng.sample(lines, args.count)]
+
+    rng = random.Random(args.seed)
+    train_words = set(w.strip() for w in rng.sample(lines, args.train_data_amount))
+    holdout = [w for w in lines if w.strip() not in train_words]
+    words = [w.strip() for w in rng.sample(holdout, args.count)]
 
     for i, word in enumerate(words, start=1):
         path = generate_one(i, args, word)
