@@ -17,10 +17,10 @@ def generate_image_with_text(word, width=512, height=512, font_path="fonts/dejav
     imgDraw.text((xText, yText), word, font=font, fill=text_color)
     img.save(output_path)
 
-def sample_text_from_file(file_path, amount=10):
+def sample_text_from_file(file_path, amount=10, seed=None):
     with open(file_path, 'r') as file:
         lines = file.readlines()
-    return random.sample(lines, amount)
+    return random.Random(seed).sample(lines, amount)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate an image with text")
@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument("--background-color", type=str, default='white', help="Background color of the image")
     parser.add_argument("--text-color", type=str, default='0,0,0', help="Text color in RGB format (e.g., '0,0,0' for black)")
     parser.add_argument("--save-dir", type=str, default='dataset', help="Save dir for the generated images")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
 
     parser.add_argument("--amount", type=int, default=10, help="Amount of random text samples to select from the file")
     return parser.parse_args()
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     os.makedirs(args.save_dir, exist_ok=True)
     os.makedirs(f'{args.save_dir}/images', exist_ok=True)
 
-    words = sample_text_from_file(args.txt_file, args.amount)
+    words = sample_text_from_file(args.txt_file, args.amount, seed=args.seed)
     for i, word in enumerate(words):
         output_path = f"{args.save_dir}/images/result_{i}.png"
         rows.append({"image_path": output_path, "word": word.strip()})
