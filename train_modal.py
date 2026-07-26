@@ -67,3 +67,13 @@ def train_t5(amount: int = AMOUNT, epochs: int = 100, batch_size: int = 8):
         "--log-dir", "/data/runs/t5",
     ], cwd=f"{repo}/training", check=True)
     vol.commit()
+
+@app.local_entrypoint()
+def main(
+    amount: int = AMOUNT,
+    vqvae_epochs: int = 200,
+    t5_epochs: int = 100,
+    font_size: int = FONT_SIZE,
+):
+    pretrain_vqvae.remote(amount=amount, epochs=vqvae_epochs, font_size=font_size)
+    train_t5.remote(amount=amount, epochs=t5_epochs, font_size=font_size)
