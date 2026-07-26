@@ -13,7 +13,7 @@ image = (
 
 vol = modal.Volume.from_name("vqvaet5-data", create_if_missing=True)
 
-FONT_SIZE = 100
+FONT_SIZE = 40
 AMOUNT = 15000
 SEED = 42
 
@@ -42,7 +42,7 @@ def _make_dataset(repo, amount, font_size, seed=SEED):
 
 
 @app.function(image=image, gpu="A10G", timeout=60 * 60 * 4, volumes={"/data": vol})
-def pretrain_vqvae(amount: int = AMOUNT, epochs: int = 200, batch_size: int = 32, font_size: int = FONT_SIZE):
+def pretrain_vqvae(amount: int = AMOUNT, epochs: int = 100, batch_size: int = 32, font_size: int = FONT_SIZE):
     import subprocess
     repo = _clone()
     _make_dataset(repo, amount, font_size)
@@ -59,7 +59,7 @@ def pretrain_vqvae(amount: int = AMOUNT, epochs: int = 200, batch_size: int = 32
 
 
 @app.function(image=image, gpu="A10G", timeout=60 * 60 * 4, volumes={"/data": vol})
-def train_t5(amount: int = AMOUNT, epochs: int = 100, batch_size: int = 8, font_size: int = FONT_SIZE):
+def train_t5(amount: int = AMOUNT, epochs: int = 20, batch_size: int = 8, font_size: int = FONT_SIZE):
     import os, shutil, subprocess
     repo = _clone()
     _make_dataset(repo, amount, font_size)
@@ -83,8 +83,8 @@ def train_t5(amount: int = AMOUNT, epochs: int = 100, batch_size: int = 8, font_
 @app.local_entrypoint()
 def main(
     amount: int = AMOUNT,
-    vqvae_epochs: int = 200,
-    t5_epochs: int = 100,
+    vqvae_epochs: int = 100,
+    t5_epochs: int = 20,
     font_size: int = FONT_SIZE,
 ):
     pretrain_vqvae.remote(amount=amount, epochs=vqvae_epochs, font_size=font_size)
