@@ -15,6 +15,7 @@ vol = modal.Volume.from_name("vqvaet5-data", create_if_missing=True)
 
 FONT_SIZE = 100
 AMOUNT = 15000
+SEED = 42
 
 REPO_URL = "https://github.com/ZeroMeOut/VQVAET5.git"
 REPO = "/root/VQVAET5"
@@ -27,7 +28,7 @@ def _clone():
     subprocess.run(["git", "clone", "--depth", "1", REPO_URL, REPO], check=True)
     return REPO
 
-def _make_dataset(repo, amount, font_size):
+def _make_dataset(repo, amount, font_size, seed=SEED):
     import subprocess
     subprocess.run([
         "python", "word_on_background/generator.py",
@@ -36,6 +37,7 @@ def _make_dataset(repo, amount, font_size):
         "--save-dir", "dataset",
         "--font-size", str(font_size),
         "--amount", str(amount),
+        "--seed", str(seed),
     ], cwd=repo, check=True)
 
 
