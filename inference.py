@@ -3,6 +3,7 @@ import sys
 import torch
 import random
 import argparse
+import gdown
 from PIL import Image
 from transformers import AutoTokenizer
 from training.utils import default_transform
@@ -14,7 +15,7 @@ from training.pretraining.vqvae_model.vqvae import VQVAE
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate word-on-background images and run inference on them.")
-    parser.add_argument("--count", type=int, default=1, help="Number of images to generate (default: 1)")
+    parser.add_argument("--count", type=int, default=10, help="Number of images to generate (default: 10)")
     parser.add_argument("--out", type=str, default="./main_image_dir", help="Output directory (default: ./main_image_dir)")
     parser.add_argument("--txt-file", type=str, default="word_on_background/CollinsScrabbleWords(2019).txt",
                          help="Text file to sample words from")
@@ -29,6 +30,32 @@ def parse_args():
     parser.add_argument("--train-seed", type=int, default=42, help="Seed the training set was generated with; must match SEED in train_modal.py")
     parser.add_argument("--train-data-amount", type=int, default=15000, help="Amount of training data to generate (default: 15000)")
     return parser.parse_args()
+
+def _is_html(path):
+    """True if the file is a saved web page rather than a checkpoint.
+
+    Drive serves a virus-scan warning page instead of the bytes for large
+    files, and urlretrieve saves that HTML happily. Without this check the
+    bad file sticks around forever, since the exists() test below passes and
+    torch.load then fails with an unhelpful zip/pickle error.
+    """
+    with open(path, "rb") as f:
+        return f.read(64).lstrip()[:1] == b"<"
+
+## Download the models if they don't exist
+def download_models():
+    models = [
+        ("19Du0wKuHChn772EMEAjR-WR0kRIVWEPW", "training/pretraining/checkpoints/best.pt", "VQVAE"),
+        ("1q_Wj6ORuBN3AZN0glBCsqUMlBTZ4mWnK", "training/checkpoints/best.pt", "VQVAET5"),
+    ]
+
+    for file_id, path, label in models:
+        if os.path.exists(path) and not _is_html(path):
+            continue
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        print(f"Downloading {label} model to {path}...")
+        gdown.download(id=file_id, output=path, quiet=True)
 
 ## A different version of the load_model function for inference. There is probably a better way to do this
 def load_models(
@@ -79,6 +106,7 @@ def generate_one(index, args, word):
 
 def main():
     args = parse_args()
+    download_models()
     model = load_models()
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained("t5-small")
@@ -97,7 +125,8 @@ def main():
     train_words = set(w.strip() for w in train_rng.sample(lines, args.train_data_amount))
     holdout = [w for w in lines if w.strip() not in train_words]
     words = [w.strip() for w in random.Random(args.seed).sample(holdout, args.count)]
-
+    
+    print(f"\nGenerating {args.count} image(s) and running inference on them (See {args.out} for the images)...")
     for i, word in enumerate(words, start=1):
         path = generate_one(i, args, word)
 
