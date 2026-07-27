@@ -1,7 +1,7 @@
 
 # VQVAET5
 
-A smol VLM that I trained to extract words from a white background (initally it was from receipts but I switched objective midway)
+A smol DONUT-like that I trained to extract words from a white background (initally it was from receipts but I switched objective midway)
 
 
 ## Getting Started
